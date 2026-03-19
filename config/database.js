@@ -8,7 +8,7 @@ if (process.env.TURSO_DATABASE_URL) {
   sequelize = new Sequelize('libsql', null, null, {
     dialect: 'sqlite',
     storage: process.env.TURSO_DATABASE_URL,
-    dialectModule: require('@libsql/client/sqlite3'),
+    dialectModule: { Database: require('libsql') }, 
     dialectOptions: {
       authToken: process.env.TURSO_AUTH_TOKEN,
     },
