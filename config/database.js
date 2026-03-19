@@ -16,13 +16,14 @@ if (process.env.TURSO_DATABASE_URL) {
   });
   console.log('Using Production Database (Turso)');
 } else {
-  // Development: Local SQLite
-  sequelize = new Sequelize({
+  // Development: Local SQLite (using libsql driver for consistency)
+  sequelize = new Sequelize('libsql', null, null, {
     dialect: 'sqlite',
     storage: path.join(__dirname, '../database.sqlite'),
+    dialectModule: { Database: require('libsql') },
     logging: false
   });
-  console.log('Using Local SQLite Database');
+  console.log('Using Local SQLite Database (via libsql)');
 }
 
 module.exports = sequelize;
