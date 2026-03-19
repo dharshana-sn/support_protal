@@ -1,12 +1,6 @@
 {
-  "version": 2,
-  "name": "terra-support-frontend",
-  "public": true,
   "cleanUrls": true,
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/public/$1"
-    }
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }
