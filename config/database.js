@@ -1,6 +1,10 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
+console.log('--- DEBUG: Current Environment Keys ---');
+console.log(Object.keys(process.env).filter(k => !k.includes('PASS') && !k.includes('SECRET') && !k.includes('TOKEN')).join(', '));
+console.log('---------------------------------------');
+
 let sequelize;
 
 if (process.env.TURSO_DATABASE_URL) {
