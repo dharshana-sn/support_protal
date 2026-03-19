@@ -1,38 +1,13 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
-console.log('--- DEBUG: Current Environment Keys ---');
-console.log(Object.keys(process.env).filter(k => !k.includes('PASS') && !k.includes('SECRET') && !k.includes('TOKEN')).join(', '));
-if (!process.env.TURSO_AUTH_TOKEN) console.warn('❌ CRITICAL: TURSO_AUTH_TOKEN is NOT found in the environment!');
-console.log('---------------------------------------');
+// Standard SQLite setup for local development
+const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(__dirname, '../database.sqlite'),
+  logging: false
+});
 
-let sequelize;
-
-if (process.env.TURSO_DATABASE_URL) {
-  // Production: Cloud SQLite (Turso)
-  sequelize = new Sequelize('libsql', null, null, {
-    dialect: 'sqlite',
-    storage: process.env.TURSO_DATABASE_URL,
-    dialectModule: { Database: require('libsql') }, 
-    dialectOptions: {
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    },
-    logging: false
-  });
-  console.log('Using Production Database (Turso)');
-} else {
-  // Check if we are potentially on Render but missing Turso config
-  if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ WARNING: Missing TURSO_DATABASE_URL. Falling back to local SQLite, which may be read-only or ephemeral.');
-  }
-  // Development: Local SQLite (using libsql driver for consistency)
-  sequelize = new Sequelize('libsql', null, null, {
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../database.sqlite'),
-    dialectModule: { Database: require('libsql') },
-    logging: false
-  });
-  console.log('Using Local SQLite Database (via libsql)');
-}
+console.log('Using Local SQLite Database (standard sqlite3)');
 
 module.exports = sequelize;

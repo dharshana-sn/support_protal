@@ -5,8 +5,8 @@
  * For production (Vercel): Set API_BASE_URL to your Render backend URL.
  */
 const CONFIG = {
-    // Example: "https://terra-backend-v3.onrender.com"
-    API_BASE_URL: "https://support-protal.onrender.com" 
+    // For local development, leave this as an empty string
+    API_BASE_URL: "" 
 };
 
 // If the URL is set, ensure it doesn't end with a slash
