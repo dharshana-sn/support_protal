@@ -6,7 +6,7 @@
  */
 const CONFIG = {
     // Example: "https://terra-backend-v3.onrender.com"
-    API_BASE_URL: "" 
+    API_BASE_URL: "https://support-protal.onrender.com" 
 };
 
 // If the URL is set, ensure it doesn't end with a slash
