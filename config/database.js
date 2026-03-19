@@ -3,6 +3,7 @@ const path = require('path');
 
 console.log('--- DEBUG: Current Environment Keys ---');
 console.log(Object.keys(process.env).filter(k => !k.includes('PASS') && !k.includes('SECRET') && !k.includes('TOKEN')).join(', '));
+if (!process.env.TURSO_AUTH_TOKEN) console.warn('❌ CRITICAL: TURSO_AUTH_TOKEN is NOT found in the environment!');
 console.log('---------------------------------------');
 
 let sequelize;
