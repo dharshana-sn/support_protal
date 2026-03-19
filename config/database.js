@@ -16,6 +16,11 @@ if (process.env.TURSO_DATABASE_URL) {
   });
   console.log('Using Production Database (Turso)');
 } else {
+  // Check if we are potentially on Render but missing Turso config
+  if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+      console.warn('⚠️ WARNING: Missing TURSO_DATABASE_URL. Falling back to local SQLite, which may be read-only or ephemeral.');
+  }
+
   // Development: Local SQLite (using libsql driver for consistency)
   sequelize = new Sequelize('libsql', null, null, {
     dialect: 'sqlite',
