@@ -1,0 +1,18 @@
+# Environment variables — NEVER commit this, contains passwords!
+.env
+
+# Node dependencies
+node_modules/
+
+# SQLite database file
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
