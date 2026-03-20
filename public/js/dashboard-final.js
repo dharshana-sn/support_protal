@@ -88,7 +88,7 @@ async function fetchTickets(page = 1) {
     const token = localStorage.getItem('token');
     try {
         const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request?page=${page}&limit=5&_=${Date.now()}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
         });
 
         if (response.status === 401) {
@@ -247,7 +247,8 @@ async function handleFormSubmit(e) {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify(data)
         });
