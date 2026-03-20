@@ -201,7 +201,7 @@ main.container {
 }
 
 .sla-card thead tr {
-  background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+  background: linear-gradient(135deg, var(--navy), var(--accent-cyan));
 }
 
 .sla-card th {

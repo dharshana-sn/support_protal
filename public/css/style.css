@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary-gradient: linear-gradient(135deg, #054279 0%, #0a569d 100%);
+  --primary-gradient: linear-gradient(135deg, #054279 0%, #06b6d4 100%);
   --primary-color: #054279;
   --secondary-color: #38b2ac;
   /* Teal/Turquoise */
