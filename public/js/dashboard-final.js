@@ -233,6 +233,35 @@ function createPageBtn(page, currentPage) {
 async function handleFormSubmit(e) {
     e.preventDefault();
     const form = e.target;
+
+    // ─── Custom Validation: check all required fields ───
+    const requiredFields = form.querySelectorAll('[required]');
+    const emptyFields = [];
+    requiredFields.forEach(field => {
+        if (!field.value || !field.value.trim()) {
+            emptyFields.push(field);
+        }
+    });
+
+    if (emptyFields.length > 0) {
+        // Build a list of missing field labels
+        const names = emptyFields.map(f => {
+            const label = form.querySelector(`label[for="${f.id}"]`);
+            return label ? label.textContent.trim() : f.name;
+        });
+        showToast(`Please fill in required fields: ${names.join(', ')}`, 'error');
+
+        // Open the accordion containing the first empty field and scroll to it
+        const firstEmpty = emptyFields[0];
+        const accordion = firstEmpty.closest('.accordion-section');
+        if (accordion && !accordion.classList.contains('open')) {
+            accordion.classList.add('open');
+        }
+        setTimeout(() => firstEmpty.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        firstEmpty.focus({ preventScroll: true });
+        return;
+    }
+
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     const btn = form.querySelector('button');
