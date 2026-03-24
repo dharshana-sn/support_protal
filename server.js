@@ -16,7 +16,7 @@ const corsOptions = {
   origin: process.env.CORS_ORIGIN || '*', 
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'Bypass-Tunnel-Reminder'],
 };
 app.use(cors(corsOptions));
   app.use(express.json());

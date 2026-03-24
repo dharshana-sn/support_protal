@@ -11,7 +11,7 @@ async function handleAuth(event, type) {
     try {
         const response = await fetch(CONFIG.API_BASE_URL + `/api/auth/${type}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+            headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Bypass-Tunnel-Reminder': 'true' },
             body: JSON.stringify({ username, password })
         });
 
