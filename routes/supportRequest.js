@@ -3,6 +3,7 @@ const router = express.Router();
 const SupportRequest = require('../models/SupportRequest');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
 const nodemailer = require('nodemailer');
 
@@ -11,6 +12,20 @@ router.post('/', auth, async (req, res) => {
   try {
     const requestData = { ...req.body, userId: req.user.id };
     const request = await SupportRequest.create(requestData);
+
+    try {
+      // Notify support team
+      const supportUsers = await User.findAll({ where: { role: 'support' } });
+      const notifications = supportUsers
+        .filter(u => u.id !== req.user.id)
+        .map(u => ({
+          userId: u.id,
+          message: `New Ticket #${request.id}: ${request.summary.substring(0, 40)}`,
+          SupportRequestId: request.id,
+          isRead: false
+        }));
+      if (notifications.length > 0) await Notification.bulkCreate(notifications);
+    } catch (notifErr) { console.error('Notification error:', notifErr); }
 
     // Send Email (if SMTP credentials are configured)
     console.log('--- Email Check ---');
@@ -243,6 +258,30 @@ router.post('/:id/comment', auth, async (req, res) => {
       SupportRequestId: request.id,
       UserId: req.user.id
     });
+
+    try {
+      // Notify support team ONLY if the commenter is NOT the only support person
+      const supportUsers = await User.findAll({ where: { role: 'support' } });
+      const notifications = supportUsers
+         .filter(u => u.id !== req.user.id) // Don't notify the person who wrote the comment
+         .map(u => ({
+           userId: u.id,
+           message: `New Comment on Ticket #${request.id} by ${req.user.username}`,
+           SupportRequestId: request.id,
+           isRead: false
+         }));
+      if (notifications.length > 0) await Notification.bulkCreate(notifications);
+      
+      // Notify ticket owner if commenter is support AND owner isn't the commenter
+      if (req.user.role === 'support' && request.userId !== req.user.id) {
+         await Notification.create({
+           userId: request.userId,
+           message: `Support replied to your Ticket #${request.id}`,
+           SupportRequestId: request.id,
+           isRead: false
+         });
+      }
+    } catch (notifErr) { console.error('Notification error:', notifErr); }
 
     res.status(201).json(comment);
   } catch (err) {

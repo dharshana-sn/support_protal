@@ -14,7 +14,7 @@ let currentTicketPage = 1;
 
 function getStatusBadgeHtml(status) {
     status = status || 'Open';
-    let bg = '#e2e8f0'; let color = '#334155'; // default/Open/Gray
+    let bg = '#dbeafe'; let color = '#1e40af'; // default/Open/Blue
     if (status === 'In Progress') { bg = '#fef08a'; color = '#854d0e'; } // Yellow
     if (status === 'Resolved') { bg = '#bbf7d0'; color = '#166534'; } // Green
     if (status === 'Closed') { bg = '#fecaca'; color = '#991b1b'; } // Red
@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (firstSection) firstSection.classList.add('open');
 
     document.getElementById('supportForm').addEventListener('submit', handleFormSubmit);
+
+    // Init Notification polling
+    fetchNotifications();
+    notificationInterval = setInterval(fetchNotifications, 10000); 
 });
 
 function toggleAccordion(header) {
@@ -388,7 +392,7 @@ async function openTicketModal(id) {
         document.getElementById('modalTicketBody').innerHTML = bodyHtml;
 
         if (role === 'support') {
-            document.getElementById('statusUpdateSection').style.display = 'block';
+            document.getElementById('statusUpdateSection').style.display = 'flex';
             document.getElementById('statusSelect').value = ticket.status || 'Open';
         }
 
@@ -488,4 +492,83 @@ async function updateTicketStatus() {
         console.error(err);
         showToast('Error updating status', 'error');
     }
+}
+
+// --- Notifications System ---
+let notificationInterval;
+
+async function fetchNotifications() {
+    const role = localStorage.getItem('role') || 'user';
+    if (role !== 'support') return;
+    
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch(CONFIG.API_BASE_URL + '/api/notifications', {
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', 'Bypass-Tunnel-Reminder': 'true' }
+        });
+        if (!response.ok) return;
+        const notifications = await response.json();
+        renderNotifications(notifications);
+    } catch (err) { console.error('Error fetching notifications:', err); }
+}
+
+function renderNotifications(notifications) {
+    document.getElementById('notificationContainer').style.display = 'block';
+    const badge = document.getElementById('notificationBadge');
+    const list = document.getElementById('notificationList');
+    
+    if (notifications.length > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = notifications.length > 9 ? '9+' : notifications.length;
+        
+        list.innerHTML = notifications.map(n => `
+            <div onclick="handleNotificationClick(event, ${n.id}, ${n.SupportRequestId})" style="padding: 14px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
+                <div style="font-size: 0.9rem; color: #334155; font-weight: 500; line-height: 1.4;">${n.message}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">${new Date(n.createdAt).toLocaleString()}</div>
+            </div>
+        `).join('');
+    } else {
+        badge.style.display = 'none';
+        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">No new notifications</div>';
+    }
+}
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', (e) => {
+    const container = document.getElementById('notificationContainer');
+    const dropdown = document.getElementById('notificationDropdown');
+    if (container && dropdown && !container.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+async function markAllNotificationsRead(e) {
+    if (e) e.stopPropagation();
+    const token = localStorage.getItem('token');
+    try {
+        await fetch(CONFIG.API_BASE_URL + '/api/notifications/read-all', {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchNotifications();
+    } catch (err) { console.error(err); }
+}
+
+async function handleNotificationClick(e, notificationId, ticketId) {
+    if (e) e.stopPropagation();
+    const token = localStorage.getItem('token');
+    try {
+        await fetch(CONFIG.API_BASE_URL + `/api/notifications/${notificationId}/read`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchNotifications();
+        
+        if (ticketId) openTicketModal(ticketId);
+        document.getElementById('notificationDropdown').style.display = 'none';
+    } catch (err) { console.error(err); }
 }

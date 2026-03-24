@@ -8,10 +8,14 @@ const sequelize = require('./config/database');
 const User = require('./models/User');
 const SupportRequest = require('./models/SupportRequest');
 const Comment = require('./models/Comment');
+const Notification = require('./models/Notification');
 
 // Relationships
 User.hasMany(SupportRequest, { foreignKey: 'userId', constraints: false });
 SupportRequest.belongsTo(User, { foreignKey: 'userId', constraints: false });
+
+User.hasMany(Notification, { foreignKey: 'userId', constraints: false, onDelete: 'CASCADE' });
+Notification.belongsTo(User, { foreignKey: 'userId', constraints: false });
 
 SupportRequest.hasMany(Comment, { foreignKey: 'SupportRequestId', onDelete: 'CASCADE' });
 Comment.belongsTo(SupportRequest, { foreignKey: 'SupportRequestId' });
@@ -42,6 +46,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/support-request', require('./routes/supportRequest'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Authenticate Database and Start Server
 sequelize.authenticate().then(() => {
