@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const SupportRequest = require('../models/SupportRequest');
+const Comment = require('../models/Comment');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const nodemailer = require('nodemailer');
 
@@ -174,16 +176,19 @@ Notes: ${request.additionalNotes || '—'}`;
   }
 });
 
-// Get User's Support Requests (paginated)
+// Get Support Requests (paginated)
 router.get('/', auth, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, Math.min(50, parseInt(req.query.limit) || 5));
     const offset = (page - 1) * limit;
 
+    const whereClause = req.user.role === 'support' ? {} : { userId: req.user.id };
+
     const { count, rows } = await SupportRequest.findAndCountAll({
-      where: { userId: req.user.id },
+      where: whereClause,
       order: [['createdAt', 'DESC']],
+      include: [{ model: User, attributes: ['username'] }],
       limit,
       offset
     });
@@ -194,6 +199,74 @@ router.get('/', auth, async (req, res) => {
       totalPages: Math.ceil(count / limit),
       currentPage: page
     });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get Single Request with Comments
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const request = await SupportRequest.findByPk(req.params.id, {
+      include: [
+        { model: Comment, order: [['createdAt', 'ASC']] },
+        { model: User, attributes: ['username'] }
+      ]
+    });
+    
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    if (req.user.role !== 'support' && request.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    
+    res.json(request);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Add a Comment
+router.post('/:id/comment', auth, async (req, res) => {
+  try {
+    const request = await SupportRequest.findByPk(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    if (req.user.role !== 'support' && request.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ message: 'Comment text is required' });
+
+    const comment = await Comment.create({
+      text,
+      authorName: req.user.username,
+      SupportRequestId: request.id,
+      UserId: req.user.id
+    });
+
+    res.status(201).json(comment);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update Status (Support Only)
+router.patch('/:id/status', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'support') {
+      return res.status(403).json({ message: 'Only support team can change status' });
+    }
+
+    const request = await SupportRequest.findByPk(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+
+    const { status } = req.body;
+    if (!status) return res.status(400).json({ message: 'Status is required' });
+
+    request.status = status;
+    await request.save();
+
+    res.json({ message: 'Status updated successfully', request });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

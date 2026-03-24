@@ -7,6 +7,17 @@ const sequelize = require('./config/database');
 // Models
 const User = require('./models/User');
 const SupportRequest = require('./models/SupportRequest');
+const Comment = require('./models/Comment');
+
+// Relationships
+User.hasMany(SupportRequest, { foreignKey: 'userId', constraints: false });
+SupportRequest.belongsTo(User, { foreignKey: 'userId', constraints: false });
+
+SupportRequest.hasMany(Comment, { foreignKey: 'SupportRequestId', onDelete: 'CASCADE' });
+Comment.belongsTo(SupportRequest, { foreignKey: 'SupportRequestId' });
+
+User.hasMany(Comment, { foreignKey: 'UserId', onDelete: 'CASCADE' });
+Comment.belongsTo(User, { foreignKey: 'UserId' });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,7 +46,7 @@ app.use('/api/support-request', require('./routes/supportRequest'));
 // Authenticate Database and Start Server
 sequelize.authenticate().then(() => {
   console.log('--- DATABASE CONNECTION SUCCESSFUL ---');
-  return sequelize.sync({ alter: true }); // Try to sync but catch specifically
+  return sequelize.sync(); // Try to sync but catch specifically
 }).then(() => {
   console.log('--- DATABASE SCHEMA SYNCED ---');
   app.listen(PORT, () => {

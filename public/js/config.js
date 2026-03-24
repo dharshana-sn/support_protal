@@ -6,8 +6,8 @@
  */
 const CONFIG = {
     // For local development, leave this as an empty string
-    API_BASE_URL: "https://janean-unattachable-lachelle.ngrok-free.dev"
-    // API_BASE_URL: "http://localhost:3000"
+    // API_BASE_URL: "https://janean-unattachable-lachelle.ngrok-free.dev"
+    API_BASE_URL: "http://localhost:3000"
 };
 
 // If the URL is set, ensure it doesn't end with a slash

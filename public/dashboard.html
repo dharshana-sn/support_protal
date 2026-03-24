@@ -90,6 +90,7 @@
                             <th>Summary</th>
                             <th>Project</th>
                             <th>Environment</th>
+                            <th>Status</th>
                             <th>Date</th>
                         </tr>
                     </thead>
@@ -260,13 +261,51 @@
 
     </main>
 
+    <!-- Ticket Details Modal -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeTicketModal()">&times;</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 id="modalTicketSummary" style="margin: 0; color: var(--navy);">Ticket Details</h2>
+                <div class="badge" id="modalTicketStatus" style="background: var(--light-blue); color: var(--navy); padding: 5px 12px; border-radius: 12px; font-weight: 600;">Open</div>
+            </div>
+            
+            <div id="statusUpdateSection" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <label for="statusSelect" style="font-weight: 600; color: var(--navy);">Update Status:</label>
+                <select id="statusSelect" style="margin-left: 10px; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                </select>
+                <button onclick="updateTicketStatus()" class="btn btn-secondary" style="margin-left: 10px; padding: 6px 16px; font-size: 0.9rem;">Save</button>
+            </div>
+
+            <div class="ticket-details-body" id="modalTicketBody" style="font-size: 0.95rem; line-height: 1.6; color: #334155;">
+                <!-- Populated by JS -->
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="color: var(--navy); margin-bottom: 15px; font-size: 1.2rem;">Comments</h3>
+                <div id="modalCommentsList" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="add-comment-section" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <textarea id="newCommentText" rows="3" placeholder="Add a comment..." style="width: 100%; border-radius: 8px; padding: 12px; border: 1px solid #cbd5e1; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
+                    <button onclick="submitComment()" class="btn btn-primary" style="margin-top: 12px;">Post Comment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 0.875rem;">
         &copy; 2026 TerrA Support Management System. All rights reserved.
     </footer>
 
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/dashboard-final.js"></script>
+    <script src="js/config.js?v=3"></script>
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/dashboard-final.js?v=3"></script>
 </body>
 
 </html>

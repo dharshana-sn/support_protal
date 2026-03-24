@@ -31,6 +31,10 @@ const SupportRequest = sequelize.define('SupportRequest', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'Open'
   }
 });
 

@@ -21,6 +21,7 @@ async function handleAuth(event, type) {
             if (type === 'login') {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('username', data.username);
+                localStorage.setItem('role', data.role || 'user');
                 window.location.href = 'dashboard.html';
             } else {
                 alert('Registration successful! Please login.');
@@ -41,6 +42,7 @@ async function handleAuth(event, type) {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     window.location.href = 'index.html';
 }
 
