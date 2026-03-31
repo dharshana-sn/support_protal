@@ -273,7 +273,7 @@ async function handleFormSubmit(e) {
     const form = e.target;
 
     // ─── Custom Validation: check all required fields ───
-    const requiredFields = form.querySelectorAll('[required]');
+    const requiredFields = form.querySelectorAll('[data-error]');
     const emptyFields = [];
     requiredFields.forEach(field => {
         if (!field.value || !field.value.trim()) {
@@ -282,15 +282,14 @@ async function handleFormSubmit(e) {
     });
 
     if (emptyFields.length > 0) {
-        // Build a list of missing field labels
-        const names = emptyFields.map(f => {
-            const label = form.querySelector(`label[for="${f.id}"]`);
-            return label ? label.textContent.trim() : f.name;
-        });
-        showToast(`Please fill in required fields: ${names.join(', ')}`, 'error');
-
-        // Open the accordion containing the first empty field and scroll to it
         const firstEmpty = emptyFields[0];
+        
+        // Use the custom data-error attribute, falling back to a generic message
+        const errorMessage = firstEmpty.getAttribute('data-error') || "Please fill in all required fields.";
+        
+        showToast(errorMessage, 'error');
+
+        // Open accordion and scroll
         const accordion = firstEmpty.closest('.accordion-section');
         if (accordion && !accordion.classList.contains('open')) {
             accordion.classList.add('open');
@@ -496,6 +495,8 @@ async function updateTicketStatus() {
 
 // --- Notifications System ---
 let notificationInterval;
+let previousNotificationCount = 0;
+let isFirstNotificationFetch = true;
 
 async function fetchNotifications() {
     const role = localStorage.getItem('role') || 'user';
@@ -508,6 +509,19 @@ async function fetchNotifications() {
         });
         if (!response.ok) return;
         const notifications = await response.json();
+        
+        // Spawn a toast if new unread notifications arrived while the user was idling
+        if (!isFirstNotificationFetch && notifications.length > previousNotificationCount) {
+             const newAlerts = notifications.length - previousNotificationCount;
+             // Ensure showToast exists and is globally available
+             if (typeof showToast === 'function') {
+                 showToast(`You have ${newAlerts} new unread Support alert(s)! 🔔`, 'success');
+             }
+        }
+        
+        previousNotificationCount = notifications.length;
+        isFirstNotificationFetch = false;
+        
         renderNotifications(notifications);
     } catch (err) { console.error('Error fetching notifications:', err); }
 }

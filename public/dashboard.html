@@ -131,7 +131,7 @@
             <h2 style="margin-bottom: 10px; color: var(--navy);">TerrA Support Request Form</h2>
             <p style="color: #64748b; margin-bottom: 30px;">Click on each section heading to expand the fields and fill out the details.</p>
 
-            <form id="supportForm">
+            <form id="supportForm" novalidate>
 
                 <!-- Section 1: Defect Identification -->
                 <div class="accordion-section">
@@ -146,19 +146,19 @@
                         <div class="grid">
                             <div class="form-group full-width">
                                 <label for="summary">Summary of the Issue</label>
-                                <input type="text" id="summary" name="summary" required placeholder="Brief title of the issue">
+                                <input type="text" id="summary" name="summary" placeholder="Brief title of the issue" data-error="Please fill the summary of the issue">
                             </div>
                             <div class="form-group">
                                 <label for="reportedBy">Reported By</label>
-                                <input type="text" id="reportedBy" name="reportedBy" required>
+                                <input type="text" id="reportedBy" name="reportedBy" data-error="Please fill the reported by field">
                             </div>
                             <div class="form-group">
                                 <label for="dateReported">Date Reported</label>
-                                <input type="date" id="dateReported" name="dateReported" required>
+                                <input type="date" id="dateReported" name="dateReported" data-error="Please select the date reported">
                             </div>
                             <div class="form-group">
                                 <label for="projectName">Project Name</label>
-                                <input type="text" id="projectName" name="projectName" required>
+                                <input type="text" id="projectName" name="projectName" data-error="Please fill the project name">
                             </div>
                             <div class="form-group">
                                 <label for="moduleFeature">Module / Feature</label>
@@ -193,7 +193,7 @@
                     <div class="accordion-body">
                         <div class="form-group">
                             <label for="detailedDescription">Detailed Description of the Issue</label>
-                            <textarea id="detailedDescription" name="detailedDescription" rows="4" required></textarea>
+                            <textarea id="detailedDescription" name="detailedDescription" rows="4" data-error="Please fill the detailed description"></textarea>
                         </div>
                         <div class="form-group">
                             <label for="preconditions">Preconditions</label>
@@ -328,9 +328,9 @@
         &copy; 2026 TerrA Support Management System. All rights reserved.
     </footer>
 
-    <script src="js/config.js?v=6"></script>
-    <script src="js/auth.js?v=6"></script>
-    <script src="js/dashboard-final.js?v=6"></script>
+    <script src="js/config.js?v=7"></script>
+    <script src="js/auth.js?v=7"></script>
+    <script src="js/dashboard-final.js?v=7"></script>
 </body>
 
 </html>
