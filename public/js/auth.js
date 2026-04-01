@@ -22,6 +22,7 @@ async function handleAuth(event, type) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('username', data.username);
                 localStorage.setItem('role', data.role || 'user');
+                localStorage.setItem('userId', data.userId || '');
                 window.location.href = 'dashboard.html';
             } else {
                 alert('Registration successful! Please login.');
@@ -43,6 +44,7 @@ function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
+    localStorage.removeItem('userId');
     window.location.href = 'index.html';
 }
 

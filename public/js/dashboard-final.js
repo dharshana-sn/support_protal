@@ -11,22 +11,34 @@ const slaData = [
 ];
 
 let currentTicketPage = 1;
+let currentSearch = '';
+let currentProject = '';
 
 function getStatusBadgeHtml(status) {
     status = status || 'Open';
-    let bg = '#dbeafe'; let color = '#1e40af'; // default/Open/Blue
+    let bg = '#dbeafe'; let color = '#1e40af'; // Open/Blue
+    if (status === 'New')         { bg = '#e0e7ff'; color = '#3730a3'; } // Indigo
     if (status === 'In Progress') { bg = '#fef08a'; color = '#854d0e'; } // Yellow
-    if (status === 'Resolved') { bg = '#bbf7d0'; color = '#166534'; } // Green
-    if (status === 'Closed') { bg = '#fecaca'; color = '#991b1b'; } // Red
-    
-    return `<span class="badge" style="background:${bg};color:${color};padding:5px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">${status}</span>`;
+    if (status === 'Resolved')    { bg = '#bbf7d0'; color = '#166534'; } // Green
+    if (status === 'Closed')      { bg = '#fecaca'; color = '#991b1b'; } // Red
+    if (status === 'Reopened')    { bg = '#fed7aa'; color = '#9a3412'; } // Orange
+
+    let displayText = status;
+
+    return `<span class="badge" style="background:${bg};color:${color};padding:5px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;">${displayText}</span>`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const token = checkAuth();
     if (!token) return;
 
-    document.getElementById('userInfo').textContent = `Welcome, ${localStorage.getItem('username')}`;
+    const username = localStorage.getItem('username') || '';
+    // Top-bar user info
+    const userInfoEl = document.getElementById('userInfo');
+    if (userInfoEl) userInfoEl.textContent = `Welcome, ${username}`;
+    // Sidebar username
+    const sidebarName = document.getElementById('sidebarUserName');
+    if (sidebarName) sidebarName.textContent = username;
     
     // Set default date
     document.getElementById('dateReported').valueAsDate = new Date();
@@ -43,7 +55,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init Notification polling
     fetchNotifications();
     notificationInterval = setInterval(fetchNotifications, 10000); 
+
+    // Search Input Listener
+    // Project Filter Listener
+    const projectSelect = document.getElementById('projectFilterSelect');
+    if (projectSelect) {
+        projectSelect.addEventListener('change', (e) => {
+            currentProject = e.target.value;
+            fetchTickets(1);
+        });
+        fetchProjectList();
+    }
 });
+
+function debounce(func, delay) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
 
 function toggleAccordion(header) {
     const section = header.parentElement;
@@ -100,8 +132,14 @@ function showToast(message, type = 'success') {
 // ─── Tickets Table with Pagination ────────────────────────────
 async function fetchTickets(page = 1) {
     const token = localStorage.getItem('token');
+    currentTicketPage = page;
+    
+    // Add Search & Project Query if present
+    const searchParam = currentSearch ? `&search=${encodeURIComponent(currentSearch)}` : '';
+    const projectParam = currentProject ? `&project=${encodeURIComponent(currentProject)}` : '';
+    
     try {
-        const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request?page=${page}&limit=5&_=${Date.now()}`, {
+        const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request?page=${page}&limit=5${searchParam}${projectParam}&_=${Date.now()}`, {
             headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', 'Bypass-Tunnel-Reminder': 'true' }
         });
 
@@ -125,11 +163,15 @@ async function fetchTickets(page = 1) {
         renderTicketsTable(rows, respPage, count);
         renderPagination(respPage, totalPages);
 
-        // Update badge count
+        // Update badge counts
         const label = `${count} ticket${count !== 1 ? 's' : ''}`;
-        document.getElementById('ticketCountBadge').textContent = label;
+        const ticketCountEl = document.getElementById('ticketCountBadge');
+        if (ticketCountEl) ticketCountEl.textContent = label;
         const heroBadge = document.getElementById('heroTicketCount');
         if (heroBadge) heroBadge.textContent = label + ' submitted';
+        // Update sidebar badge
+        const sbBadge = document.getElementById('sidebarBadge');
+        if (sbBadge) sbBadge.textContent = count;
     } catch (err) {
         console.error('Error fetching tickets:', err);
     }
@@ -353,13 +395,15 @@ async function openTicketModal(id) {
     currentTicketId = id;
     const modal = document.getElementById('ticketModal');
     const role = localStorage.getItem('role') || 'user';
+    const userId = parseInt(localStorage.getItem('userId') || '0');
     const token = localStorage.getItem('token');
-    
+
     // Reset modal
     document.getElementById('modalTicketSummary').textContent = 'Loading...';
     document.getElementById('modalTicketBody').innerHTML = '';
     document.getElementById('modalCommentsList').innerHTML = '<p style="color:#94a3b8;">Loading comments...</p>';
     document.getElementById('statusUpdateSection').style.display = 'none';
+    document.getElementById('userActionSection').style.display = 'none';
 
     modal.style.display = 'block';
 
@@ -372,7 +416,7 @@ async function openTicketModal(id) {
         const ticket = await response.json();
 
         document.getElementById('modalTicketSummary').textContent = `#${ticket.id} - ${ticket.summary}`;
-        
+
         const statusContainer = document.getElementById('modalTicketStatus');
         statusContainer.innerHTML = getStatusBadgeHtml(ticket.status);
         statusContainer.style.background = 'transparent';
@@ -385,78 +429,78 @@ async function openTicketModal(id) {
         bodyHtml += `<p><strong>Form Reported By:</strong> ${ticket.reportedBy} | <strong>Project:</strong> ${ticket.projectName}</p>`;
         bodyHtml += `<p><strong>Description:</strong><br>${(ticket.detailedDescription || '').replace(/\n/g, '<br>')}</p>`;
         if (ticket.step1 || ticket.expectedResult) {
-             bodyHtml += `<p><strong>Steps:</strong><br>1. ${ticket.step1 || ''}<br>2. ${ticket.step2 || ''}<br>3. ${ticket.step3 || ''}</p>`;
-             bodyHtml += `<p><strong>Expected:</strong> ${ticket.expectedResult || ''}<br><strong>Actual:</strong> ${ticket.actualResult || ''}</p>`;
+            bodyHtml += `<p><strong>Steps:</strong><br>1. ${ticket.step1 || ''}<br>2. ${ticket.step2 || ''}<br>3. ${ticket.step3 || ''}</p>`;
+            bodyHtml += `<p><strong>Expected:</strong> ${ticket.expectedResult || ''}<br><strong>Actual:</strong> ${ticket.actualResult || ''}</p>`;
         }
         document.getElementById('modalTicketBody').innerHTML = bodyHtml;
 
+        // Support: show status dropdown (New / Open / In Progress / Resolved)
         if (role === 'support') {
             document.getElementById('statusUpdateSection').style.display = 'flex';
             document.getElementById('statusSelect').value = ticket.status || 'Open';
         }
 
+        // Ticket Owner: show Reopen / Close dropdown
+        const isOwner = Number(ticket.userId) === Number(userId);
+        if (isOwner && role !== 'support') {
+            const userSection = document.getElementById('userActionSection');
+            const sel = document.getElementById('userStatusSelect');
+            const currentStatus = ticket.status || 'Open';
+            // Pre-select the most logical action
+            if (currentStatus === 'Closed' || currentStatus === 'Resolved') {
+                sel.value = 'Reopened';
+            } else {
+                sel.value = 'Closed';
+            }
+            userSection.style.display = 'flex';
+        }
+
         renderComments(ticket.Comments);
     } catch (err) {
-        console.error(err);
-        document.getElementById('modalTicketBody').innerHTML = '<p style="color:red;">Error loading ticket details.</p>';
+        console.error('Error in openTicketModal:', err);
+        document.getElementById('modalTicketBody').innerHTML = `<p style="color:red; background:#fee2e2; padding:10px; border-radius:5px; border: 1px solid #ef4444;">Error loading ticket details: ${err.message}</p>`;
     }
 }
 
 function closeTicketModal() {
     document.getElementById('ticketModal').style.display = 'none';
+    document.getElementById('statusUpdateSection').style.display = 'none';
+    document.getElementById('userActionSection').style.display = 'none';
     currentTicketId = null;
 }
 
-function renderComments(comments) {
-    const list = document.getElementById('modalCommentsList');
-    if (!comments || comments.length === 0) {
-        list.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem;">No comments yet.</p>';
-        return;
-    }
-
-    list.innerHTML = comments.map(c => `
-        <div style="background:#f1f5f9; padding:12px; border-radius:8px; border-left:3px solid var(--navy);">
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:4px;">
-                <strong>${c.authorName}</strong> on ${new Date(c.createdAt).toLocaleString()}
-            </div>
-            <div style="font-size:0.95rem; color:#334155; white-space:pre-wrap;">${c.text}</div>
-        </div>
-    `).join('');
-}
-
-async function submitComment() {
+// ─── User Actions: Reopen / Close (dropdown) ─────────────
+async function setUserTicketStatus() {
     if (!currentTicketId) return;
-    const textInput = document.getElementById('newCommentText');
-    const text = textInput.value.trim();
-    if (!text) return;
-
+    const status = document.getElementById('userStatusSelect').value;
     const token = localStorage.getItem('token');
-    const btn = event.target;
-    btn.disabled = true;
+
+    const saveBtn = document.querySelector('#userActionSection button');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
 
     try {
-        const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request/${currentTicketId}/comment`, {
-            method: 'POST',
-            headers: { 
+        const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request/${currentTicketId}/status`, {
+            method: 'PATCH',
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'ngrok-skip-browser-warning': 'true',
-                'Bypass-Tunnel-Reminder': 'true'
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ status })
         });
+
         if (response.ok) {
-            textInput.value = '';
-            showToast('Comment added', 'success');
-            openTicketModal(currentTicketId); // Refresh modal
+            showToast(`Ticket status updated to ${status}!`, 'success');
+            fetchTickets(currentTicketPage || 1);
+            openTicketModal(currentTicketId); // Local refresh
         } else {
-            showToast('Failed to add comment', 'error');
+            const err = await response.json();
+            showToast(err.message || 'Status update failed', 'error');
         }
     } catch (err) {
         console.error(err);
-        showToast('Error adding comment', 'error');
+        showToast('Error updating status', 'error');
     } finally {
-        btn.disabled = false;
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
     }
 }
 
@@ -465,33 +509,85 @@ async function updateTicketStatus() {
     const status = document.getElementById('statusSelect').value;
     const token = localStorage.getItem('token');
     
-    // Using currentTicketPage variable to refresh properly
+    const saveBtn = document.querySelector('#statusUpdateSection button');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
     try {
         const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request/${currentTicketId}/status`, {
             method: 'PATCH',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'ngrok-skip-browser-warning': 'true',
-                'Bypass-Tunnel-Reminder': 'true'
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ status })
         });
         if (response.ok) {
-            showToast('Status updated!', 'success');
-            const statusContainer = document.getElementById('modalTicketStatus');
-            statusContainer.innerHTML = getStatusBadgeHtml(status);
-            statusContainer.style.background = 'transparent';
-            statusContainer.style.padding = '0';
-            fetchTickets(typeof currentTicketPage !== 'undefined' ? currentTicketPage : 1); // Refresh background table
+            showToast(`Status updated to ${status}!`, 'success');
+            fetchTickets(currentTicketPage || 1);
+            openTicketModal(currentTicketId);
         } else {
-            showToast('Failed to update status', 'error');
+            const err = await response.json();
+            showToast(err.message || 'Failed to update status', 'error');
         }
     } catch (err) {
         console.error(err);
         showToast('Error updating status', 'error');
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
     }
 }
+
+function renderComments(comments) {
+    const list = document.getElementById('modalCommentsList');
+    if (!comments || comments.length === 0) {
+        list.innerHTML = '<p style="color:#64748b; font-style:italic; font-size:0.95rem;">No comments yet.</p>';
+        return;
+    }
+
+    list.innerHTML = comments.map(c => `
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:12px 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-weight:700; color:var(--navy); font-size:0.9rem;">${c.authorName || (c.User ? c.User.username : 'Unknown')}</span>
+                <span style="color:#94a3b8; font-size:0.8rem;">${new Date(c.createdAt).toLocaleString()}</span>
+            </div>
+            <div style="color:#334155; font-size:0.95rem; line-height:1.5;">${c.text.replace(/\n/g, '<br>')}</div>
+        </div>
+    `).join('');
+}
+
+async function submitComment() {
+    const textEl = document.getElementById('newCommentText');
+    const text = textEl.value.trim();
+    if (!text || !currentTicketId) return;
+
+    const btn = document.querySelector('button[onclick="submitComment()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Posting...'; }
+
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch(CONFIG.API_BASE_URL + `/api/support-request/${currentTicketId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text })
+        });
+
+        if (response.ok) {
+            textEl.value = '';
+            openTicketModal(currentTicketId);
+        } else {
+            showToast('Failed to post comment', 'error');
+        }
+    } catch (err) {
+        console.error('Comment error:', err);
+        showToast('Error posting comment', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Post Comment'; }
+    }
+}
+
 
 // --- Notifications System ---
 let notificationInterval;
@@ -500,7 +596,6 @@ let isFirstNotificationFetch = true;
 
 async function fetchNotifications() {
     const role = localStorage.getItem('role') || 'user';
-    if (role !== 'support') return;
     
     const token = localStorage.getItem('token');
     try {
@@ -526,24 +621,52 @@ async function fetchNotifications() {
     } catch (err) { console.error('Error fetching notifications:', err); }
 }
 
+async function fetchProjectList() {
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch(CONFIG.API_BASE_URL + '/api/support-request/projects', {
+            headers: { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', 'Bypass-Tunnel-Reminder': 'true' }
+        });
+        if (!response.ok) return;
+        const projects = await response.json();
+        const select = document.getElementById('projectFilterSelect');
+        if (!select) return;
+        
+        // Preserve current selection if possible
+        const existingVal = select.value;
+        select.innerHTML = '<option value="">All Projects</option>';
+        projects.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            select.appendChild(opt);
+        });
+        select.value = existingVal;
+    } catch (err) { console.error('Error fetching project list:', err); }
+}
+
 function renderNotifications(notifications) {
-    document.getElementById('notificationContainer').style.display = 'block';
+    const container = document.getElementById('notificationContainer');
+    if (container) container.style.display = 'inline-flex';
+    
     const badge = document.getElementById('notificationBadge');
     const list = document.getElementById('notificationList');
     
+    if (!badge || !list) return;
+
     if (notifications.length > 0) {
         badge.style.display = 'flex';
         badge.textContent = notifications.length > 9 ? '9+' : notifications.length;
         
         list.innerHTML = notifications.map(n => `
-            <div onclick="handleNotificationClick(event, ${n.id}, ${n.SupportRequestId})" style="padding: 14px 16px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.2s;">
-                <div style="font-size: 0.9rem; color: #334155; font-weight: 500; line-height: 1.4;">${n.message}</div>
-                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 5px;">${new Date(n.createdAt).toLocaleString()}</div>
+            <div class="notif-item ${n.read ? '' : 'unread'}" onclick="handleNotificationClick(event, ${n.id}, ${n.SupportRequestId})">
+                <div class="notif-item-title">${n.message}</div>
+                <div class="notif-item-time">${new Date(n.createdAt).toLocaleString()}</div>
             </div>
         `).join('');
     } else {
         badge.style.display = 'none';
-        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">No new notifications</div>';
+        list.innerHTML = '<div class="notif-empty">No new notifications</div>';
     }
 }
 

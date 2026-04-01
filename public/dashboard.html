@@ -9,328 +9,402 @@
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
 
-<body>
-    <nav>
-        <div class="container nav-content">
-            <div class="logo">TerrA Support</div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <!-- Notification Bell Container -->
-                <div id="notificationContainer" style="display: none; position: relative; cursor: pointer; padding: 8px; background: rgba(255,255,255,0.15); border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(10px); transition: all 0.2s;" onclick="toggleNotifications()" onmouseover="this.style.background='rgba(255,255,255,0.25)'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='scale(1)';">
-                    <svg id="bellIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<body class="app-shell">
+
+    <!-- ══════════════════════════════════════
+         COLLAPSIBLE LEFT SIDEBAR
+    ══════════════════════════════════════ -->
+    <aside id="sidebar" class="sidebar">
+
+        <!-- Brand + Toggle -->
+        <div class="sb-brand">
+            <div class="sb-logo">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="url(#lg1)"/>
+                    <path d="M8 16l5 5 11-11" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="lg1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#054279"/><stop offset="1" stop-color="#06b6d4"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span class="sb-name">TerrA Support</span>
+            </div>
+            <button class="sb-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M9 3v18"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Nav -->
+        <nav class="sb-nav">
+            <span class="sb-section-label">Sections</span>
+
+            <button class="sb-item active" id="nav-history" onclick="goSection('history')" data-tip="My History">
+                <span class="sb-icon">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                    </svg>
+                </span>
+                <span class="sb-text">My History</span>
+                <span class="sb-badge" id="sidebarBadge">0</span>
+            </button>
+
+            <button class="sb-item" id="nav-sla" onclick="goSection('sla')" data-tip="SLA Reference">
+                <span class="sb-icon">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 7v5l3 3"/>
+                    </svg>
+                </span>
+                <span class="sb-text">SLA Reference</span>
+                <span class="sb-tag">7 types</span>
+            </button>
+
+            <button class="sb-item" id="nav-form" onclick="goSection('form')" data-tip="Submit Request">
+                <span class="sb-icon">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </span>
+                <span class="sb-text">Submit Request</span>
+            </button>
+        </nav>
+
+        <!-- Footer -->
+        <div class="sb-footer">
+            <div class="sb-divider"></div>
+            <div class="sb-user">
+                <div class="sb-avatar">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <span class="sb-username" id="sidebarUserName"></span>
+            </div>
+            <button class="sb-logout" onclick="logout()" data-tip="Logout">
+                <span class="sb-icon">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </span>
+                <span class="sb-text">Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════
+         MAIN AREA
+    ══════════════════════════════════════ -->
+    <div class="app-main" id="appMain">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-info">
+                <h1 class="topbar-title" id="topbarTitle">My History</h1>
+                <p class="topbar-sub" id="topbarSub">Your recently submitted defect tickets</p>
+            </div>
+            <div class="topbar-actions">
+                <!-- Notification Bell -->
+                <div id="notificationContainer" class="notif-container" style="display:none;" onclick="toggleNotifications()">
+                    <svg id="bellIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
-                    <span id="notificationBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #f43f5e; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 0.75rem; font-weight: 800; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(244,63,94,0.5);">0</span>
-                    
-                    <!-- Dropdown -->
-                    <div id="notificationDropdown" style="display: none; position: absolute; top: 40px; right: -10px; width: 340px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #e2e8f0; overflow: hidden; z-index: 200;">
-                        <div style="padding: 14px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; cursor: default;" onclick="event.stopPropagation()">
-                            <span style="font-weight: 700; color: var(--navy); font-size: 0.95rem;">Notifications</span>
-                            <span style="font-size: 0.8rem; color: var(--accent-indigo); cursor: pointer;" onclick="markAllNotificationsRead(event)">Mark all as read</span>
+                    <span id="notificationBadge" class="notif-badge">0</span>
+                    <div id="notificationDropdown" class="notif-dropdown">
+                        <div class="notif-header" onclick="event.stopPropagation()">
+                            <span>Notifications</span>
+                            <span class="mark-read" onclick="markAllNotificationsRead(event)">Mark all as read</span>
                         </div>
-                        <div id="notificationList" style="max-height: 380px; overflow-y: auto;" onclick="event.stopPropagation()">
-                            <!-- Populated by JS -->
-                            <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem;">No new notifications</div>
+                        <div id="notificationList" class="notif-list" onclick="event.stopPropagation()">
+                            <div class="notif-empty">No new notifications</div>
                         </div>
                     </div>
                 </div>
+                <span id="userInfo" class="topbar-user"></span>
 
-                <span id="userInfo" style="font-weight: 500;"></span>
-                <button class="btn btn-secondary" onclick="logout()"
-                    style="padding: 8px 16px; font-size: 0.875rem;">Logout</button>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <header class="hero">
-        <div class="container">
-            <h1>Support Portal</h1>
-            <p>Refer to the Defect SLA guidelines, review your tickets, and submit a new support request.</p>
-            <!-- Vibrant stat chips -->
-            <div style="display:flex; justify-content:center; gap:14px; margin-top:32px; flex-wrap:wrap;">
-                <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);backdrop-filter:blur(10px);border-radius:24px;padding:10px 22px;color:#fff;font-size:0.875rem;font-weight:600;">
-                    <span style="font-size:1.15rem;">🎫</span>
-                    <span id="heroTicketCount">Loading tickets…</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;background:rgba(6,182,212,0.2);border:1px solid rgba(6,182,212,0.3);backdrop-filter:blur(10px);border-radius:24px;padding:10px 22px;color:#fff;font-size:0.875rem;font-weight:600;">
-                    <span style="font-size:1.15rem;">⚡</span>
-                    <span>7 SLA Categories</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.3);backdrop-filter:blur(10px);border-radius:24px;padding:10px 22px;color:#fff;font-size:0.875rem;font-weight:600;">
-                    <span style="font-size:1.15rem;">🔒</span>
-                    <span>Secure &amp; Private</span>
-                </div>
-            </div>
-        </div>
-    </header>
+        <!-- Scrollable Content -->
+        <main class="app-content">
 
-    <!-- Toast Notification Container -->
+            <!-- ▸ PANEL: My History -->
+            <section id="panel-history" class="panel active">
+                <div class="stat-row">
+                    <div class="chip"><span>🎫</span><span id="heroTicketCount">Loading…</span></div>
+                    <div class="chip chip-cyan"><span>📅</span><span>Ticket History</span></div>
+                </div>
+
+                <div class="card tickets-card">
+                    <div class="tickets-header">
+                        <div>
+                            <h2>My Support Requests</h2>
+                            <p class="tickets-subtitle">Your recently submitted defect tickets.</p>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:12px; flex-grow:1; margin:0 20px; max-width: 500px;">
+                            <select id="projectFilterSelect" style="padding: 9px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.9rem; background: #f8fafc; color: #475569; min-width: 160px; cursor: pointer; outline: none;">
+                                <option value="">All Projects</option>
+                            </select>
+                        </div>
+                        <span class="ticket-count-badge" id="ticketCountBadge">0 tickets</span>
+                    </div>
+                    <div class="table-container" id="ticketsTableContainer">
+                        <table id="ticketsTable">
+                            <thead>
+                                <tr>
+                                    <th>TicketID</th><th>Summary</th><th>Project</th>
+                                    <th>Environment</th><th>Status</th><th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="ticketsEmpty" style="display:none;">
+                        <p>🎫 No tickets yet. Use <strong>Submit Request</strong> to get started.</p>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls"></div>
+                </div>
+            </section>
+
+            <!-- ▸ PANEL: SLA Reference -->
+            <section id="panel-sla" class="panel">
+                <div class="stat-row">
+                    <div class="chip chip-indigo"><span>⚡</span><span>7 SLA Categories</span></div>
+                    <div class="chip"><span>📋</span><span>Defect Classification Guide</span></div>
+                </div>
+
+                <div class="card sla-card">
+                    <div class="sla-header">
+                        <div>
+                            <h2>Defect SLA Reference</h2>
+                            <p class="sla-subtitle">Use this guideline to classify your defect and understand the expected turnaround time.</p>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="slaTable">
+                            <thead>
+                                <tr>
+                                    <th>Category</th><th>Description</th>
+                                    <th>Typical Scenario</th><th>ETA (Business Days)</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ▸ PANEL: Submit Request -->
+            <section id="panel-form" class="panel">
+                <div class="stat-row">
+                    <div class="chip chip-cyan"><span>✍️</span><span>New Support Request</span></div>
+                    <div class="chip"><span>🔒</span><span>Secure &amp; Private</span></div>
+                </div>
+
+                <div class="card form-card">
+                    <h2 style="margin-bottom:10px;color:var(--navy);">TerrA Support Request Form</h2>
+                    <p style="color:#64748b;margin-bottom:30px;">Click on each section heading to expand the fields and fill out the details.</p>
+
+                    <form id="supportForm" novalidate>
+
+                        <div class="accordion-section">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-title"><span class="section-num">1</span><span>Defect Identification</span></div>
+                                <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div class="accordion-body">
+                                <div class="grid">
+                                    <div class="form-group full-width">
+                                        <label for="summary">Summary of the Issue</label>
+                                        <input type="text" id="summary" name="summary" placeholder="Brief title of the issue" data-error="Please fill the summary of the issue">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="reportedBy">Reported By</label>
+                                        <input type="text" id="reportedBy" name="reportedBy" data-error="Please fill the reported by field">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="dateReported">Date Reported</label>
+                                        <input type="date" id="dateReported" name="dateReported" data-error="Please select the date reported">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="projectName">Project Name</label>
+                                        <input type="text" id="projectName" name="projectName" data-error="Please fill the project name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="moduleFeature">Module / Feature</label>
+                                        <input type="text" id="moduleFeature" name="moduleFeature">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="environment">Environment (UAT/Prod/etc.)</label>
+                                        <select id="environment" name="environment">
+                                            <option value="UAT">UAT</option>
+                                            <option value="Prod">Prod</option>
+                                            <option value="Development">Development</option>
+                                            <option value="Client Specific">Client Specific</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="terraVersion">TerrA Version Number</label>
+                                        <input type="text" id="terraVersion" name="terraVersion">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-section">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-title"><span class="section-num">2</span><span>Description</span></div>
+                                <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div class="accordion-body">
+                                <div class="form-group">
+                                    <label for="detailedDescription">Detailed Description of the Issue</label>
+                                    <textarea id="detailedDescription" name="detailedDescription" rows="4" data-error="Please fill the detailed description"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="preconditions">Preconditions</label>
+                                    <textarea id="preconditions" name="preconditions" rows="3" placeholder="Setup required to reproduce"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-section">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-title"><span class="section-num">3</span><span>Steps to Reproduce</span></div>
+                                <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div class="accordion-body">
+                                <div class="grid">
+                                    <div class="form-group"><label for="step1">Step 1</label><input type="text" id="step1" name="step1"></div>
+                                    <div class="form-group"><label for="step2">Step 2</label><input type="text" id="step2" name="step2"></div>
+                                    <div class="form-group"><label for="step3">Step 3</label><input type="text" id="step3" name="step3"></div>
+                                </div>
+                                <div class="grid">
+                                    <div class="form-group"><label for="expectedResult">Expected Result</label><textarea id="expectedResult" name="expectedResult" rows="2"></textarea></div>
+                                    <div class="form-group"><label for="actualResult">Actual Result</label><textarea id="actualResult" name="actualResult" rows="2"></textarea></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-section">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <div class="accordion-title"><span class="section-num">4</span><span>Attachments &amp; Evidence</span></div>
+                                <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div class="accordion-body">
+                                <div class="grid">
+                                    <div class="form-group">
+                                        <label for="screenshotsAttached">Screenshots Attached?</label>
+                                        <select id="screenshotsAttached" name="screenshotsAttached"><option value="No">No</option><option value="Yes">Yes</option></select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="logFilesAttached">Log Files Attached?</label>
+                                        <select id="logFilesAttached" name="logFilesAttached"><option value="No">No</option><option value="Yes">Yes</option></select>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label for="additionalNotes">Additional Notes</label>
+                                        <textarea id="additionalNotes" name="additionalNotes" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:40px;text-align:center;">
+                            <button type="submit" class="btn btn-primary" style="padding:15px 40px;font-size:1.1rem;min-width:250px;">Submit Support Request</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="app-footer">&copy; 2026 TerrA Support Management System. All rights reserved.</footer>
+    </div>
+
+    <!-- Toast -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <main class="container" style="margin-top: -70px; position: relative; z-index: 10;">
-
-        <!-- ① Defect SLA Reference (at the TOP) -->
-        <section class="card sla-card">
-            <div class="sla-header">
-                <div>
-                    <h2>Defect SLA Reference</h2>
-                    <p class="sla-subtitle">Use this guideline to classify your defect and understand the expected turnaround time.</p>
-                </div>
-            </div>
-            <div class="table-container">
-                <table id="slaTable">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Description</th>
-                            <th>Typical Scenario</th>
-                            <th>ETA (Business Days)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ② My Support Requests -->
-        <section class="card tickets-card">
-            <div class="tickets-header">
-                <div>
-                    <h2>My Support Requests</h2>
-                    <p class="tickets-subtitle">Your recently submitted defect tickets.</p>
-                </div>
-                <span class="ticket-count-badge" id="ticketCountBadge">0 tickets</span>
-            </div>
-            <div class="table-container" id="ticketsTableContainer">
-                <table id="ticketsTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Summary</th>
-                            <th>Project</th>
-                            <th>Environment</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="ticketsEmpty" style="display:none;">
-                <p>🎫 No tickets yet. Submit a support request below to get started.</p>
-            </div>
-            <div class="pagination-controls" id="paginationControls"></div>
-        </section>
-
-        <!-- ② Support Request Form -->
-        <section class="card form-card">
-            <h2 style="margin-bottom: 10px; color: var(--navy);">TerrA Support Request Form</h2>
-            <p style="color: #64748b; margin-bottom: 30px;">Click on each section heading to expand the fields and fill out the details.</p>
-
-            <form id="supportForm" novalidate>
-
-                <!-- Section 1: Defect Identification -->
-                <div class="accordion-section">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title">
-                            <span class="section-num">1</span>
-                            <span>Defect Identification</span>
-                        </div>
-                        <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="grid">
-                            <div class="form-group full-width">
-                                <label for="summary">Summary of the Issue</label>
-                                <input type="text" id="summary" name="summary" placeholder="Brief title of the issue" data-error="Please fill the summary of the issue">
-                            </div>
-                            <div class="form-group">
-                                <label for="reportedBy">Reported By</label>
-                                <input type="text" id="reportedBy" name="reportedBy" data-error="Please fill the reported by field">
-                            </div>
-                            <div class="form-group">
-                                <label for="dateReported">Date Reported</label>
-                                <input type="date" id="dateReported" name="dateReported" data-error="Please select the date reported">
-                            </div>
-                            <div class="form-group">
-                                <label for="projectName">Project Name</label>
-                                <input type="text" id="projectName" name="projectName" data-error="Please fill the project name">
-                            </div>
-                            <div class="form-group">
-                                <label for="moduleFeature">Module / Feature</label>
-                                <input type="text" id="moduleFeature" name="moduleFeature">
-                            </div>
-                            <div class="form-group">
-                                <label for="environment">Environment (UAT/Prod/etc.)</label>
-                                <select id="environment" name="environment">
-                                    <option value="UAT">UAT</option>
-                                    <option value="Prod">Prod</option>
-                                    <option value="Development">Development</option>
-                                    <option value="Client Specific">Client Specific</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="terraVersion">TerrA Version Number</label>
-                                <input type="text" id="terraVersion" name="terraVersion">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 2: Description -->
-                <div class="accordion-section">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title">
-                            <span class="section-num">2</span>
-                            <span>Description</span>
-                        </div>
-                        <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="form-group">
-                            <label for="detailedDescription">Detailed Description of the Issue</label>
-                            <textarea id="detailedDescription" name="detailedDescription" rows="4" data-error="Please fill the detailed description"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="preconditions">Preconditions</label>
-                            <textarea id="preconditions" name="preconditions" rows="3"
-                                placeholder="Setup required to reproduce"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Steps to Reproduce -->
-                <div class="accordion-section">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title">
-                            <span class="section-num">3</span>
-                            <span>Steps to Reproduce</span>
-                        </div>
-                        <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="grid">
-                            <div class="form-group">
-                                <label for="step1">Step 1</label>
-                                <input type="text" id="step1" name="step1">
-                            </div>
-                            <div class="form-group">
-                                <label for="step2">Step 2</label>
-                                <input type="text" id="step2" name="step2">
-                            </div>
-                            <div class="form-group">
-                                <label for="step3">Step 3</label>
-                                <input type="text" id="step3" name="step3">
-                            </div>
-                        </div>
-                        <div class="grid">
-                            <div class="form-group">
-                                <label for="expectedResult">Expected Result</label>
-                                <textarea id="expectedResult" name="expectedResult" rows="2"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="actualResult">Actual Result</label>
-                                <textarea id="actualResult" name="actualResult" rows="2"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 4: Attachments & Evidence -->
-                <div class="accordion-section">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        <div class="accordion-title">
-                            <span class="section-num">4</span>
-                            <span>Attachments &amp; Evidence</span>
-                        </div>
-                        <svg class="accordion-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div class="accordion-body">
-                        <div class="grid">
-                            <div class="form-group">
-                                <label for="screenshotsAttached">Screenshots Attached?</label>
-                                <select id="screenshotsAttached" name="screenshotsAttached">
-                                    <option value="No">No</option>
-                                    <option value="Yes">Yes</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="logFilesAttached">Log Files Attached?</label>
-                                <select id="logFilesAttached" name="logFilesAttached">
-                                    <option value="No">No</option>
-                                    <option value="Yes">Yes</option>
-                                </select>
-                            </div>
-                            <div class="form-group full-width">
-                                <label for="additionalNotes">Additional Notes</label>
-                                <textarea id="additionalNotes" name="additionalNotes" rows="2"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 40px; text-align: center;">
-                    <button type="submit" class="btn btn-primary"
-                        style="padding: 15px 40px; font-size: 1.1rem; min-width: 250px;">Submit Support Request</button>
-                </div>
-            </form>
-        </section>
-
-    </main>
-
-    <!-- Ticket Details Modal -->
+    <!-- Ticket Modal -->
     <div id="ticketModal" class="modal">
         <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 id="modalTicketSummary" style="margin: 0; color: var(--navy); padding-right: 15px; line-height: 1.3;">Ticket Details</h2>
-                <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e2e8f0;padding-bottom:15px;margin-bottom:20px;">
+                <h2 id="modalTicketSummary" style="margin:0;color:var(--navy);padding-right:15px;line-height:1.3;">Ticket Details</h2>
+                <div style="display:flex;align-items:center;gap:15px;">
                     <div id="modalTicketStatus"></div>
-                    <span class="close-modal" onclick="closeTicketModal()" style="font-size: 28px; line-height: 1; margin-top: -5px; float: none;">&times;</span>
+                    <span class="close-modal" onclick="closeTicketModal()" style="font-size:28px;line-height:1;margin-top:-5px;float:none;">&times;</span>
                 </div>
             </div>
-            
-            <div id="statusUpdateSection" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; flex-wrap: wrap; gap: 12px; align-items: center;">
-                <label for="statusSelect" style="font-weight: 600; color: var(--navy); margin: 0;">Update Status:</label>
-                <div style="display: flex; gap: 10px; flex-grow: 1; max-width: 320px;">
-                    <select id="statusSelect" style="flex-grow: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-family: inherit; font-size: 0.95rem; width: auto;">
+            <!-- ▸ Support: status dropdown (New / Open / In Progress / Resolved) -->
+            <div id="statusUpdateSection" style="display:none;margin-bottom:16px;padding:15px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;flex-wrap:wrap;gap:12px;align-items:center;">
+                <label for="statusSelect" style="font-weight:600;color:var(--navy);margin:0;">Update Status:</label>
+                <div style="display:flex;gap:10px;flex-grow:1;max-width:340px;">
+                    <select id="statusSelect" style="flex-grow:1;padding:8px 12px;border-radius:6px;border:1px solid #cbd5e1;font-family:inherit;font-size:0.95rem;width:auto;">
+                        <option value="New">New</option>
                         <option value="Open">Open</option>
                         <option value="In Progress">In Progress</option>
                         <option value="Resolved">Resolved</option>
+                        <option value="Reopened">Reopened</option>
                         <option value="Closed">Closed</option>
                     </select>
-                    <button onclick="updateTicketStatus()" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.95rem; border-radius: 6px; white-space: nowrap; margin: 0;">Save</button>
+                    <button onclick="updateTicketStatus()" class="btn btn-primary" style="padding:8px 20px;font-size:0.95rem;border-radius:6px;white-space:nowrap;margin:0;">Save</button>
                 </div>
             </div>
 
-            <div class="ticket-details-body" id="modalTicketBody" style="font-size: 0.95rem; line-height: 1.6; color: #334155;">
-                <!-- Populated by JS -->
-            </div>
-
-            <div style="margin-top: 30px;">
-                <h3 style="color: var(--navy); margin-bottom: 15px; font-size: 1.2rem;">Comments</h3>
-                <div id="modalCommentsList" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Populated by JS -->
+            <!-- ▸ User: Reopen / Close dropdown -->
+            <div id="userActionSection" style="display:none;margin-bottom:16px;padding:15px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;flex-wrap:wrap;gap:12px;align-items:center;">
+                <label for="userStatusSelect" style="font-weight:600;color:#92400e;margin:0;">Update Status:</label>
+                <div style="display:flex;gap:10px;flex-grow:1;max-width:340px;">
+                    <select id="userStatusSelect" style="flex-grow:1;padding:8px 12px;border-radius:6px;border:1px solid #fcd34d;font-family:inherit;font-size:0.95rem;width:auto;background:#fffbeb;color:#92400e;">
+                        <option value="Reopened">Reopened</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <button onclick="setUserTicketStatus()" class="btn btn-primary" style="padding:8px 20px;font-size:0.95rem;border-radius:6px;white-space:nowrap;margin:0;">Save</button>
                 </div>
-
-                <div class="add-comment-section" style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <textarea id="newCommentText" rows="3" placeholder="Add a comment..." style="width: 100%; border-radius: 8px; padding: 12px; border: 1px solid #cbd5e1; font-family: inherit; resize: vertical; box-sizing: border-box;"></textarea>
-                    <button onclick="submitComment()" class="btn btn-primary" style="margin-top: 12px;">Post Comment</button>
+            </div>
+            <div class="ticket-details-body" id="modalTicketBody" style="font-size:0.95rem;line-height:1.6;color:#334155;"></div>
+            <div style="margin-top:30px;">
+                <h3 style="color:var(--navy);margin-bottom:15px;font-size:1.2rem;">Comments</h3>
+                <div id="modalCommentsList" style="max-height:300px;overflow-y:auto;margin-bottom:20px;display:flex;flex-direction:column;gap:12px;"></div>
+                <div style="background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #e2e8f0;">
+                    <textarea id="newCommentText" rows="3" placeholder="Add a comment..." style="width:100%;border-radius:8px;padding:12px;border:1px solid #cbd5e1;font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+                    <button onclick="submitComment()" class="btn btn-primary" style="margin-top:12px;">Post Comment</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 0.875rem;">
-        &copy; 2026 TerrA Support Management System. All rights reserved.
-    </footer>
-
     <script src="js/config.js?v=7"></script>
     <script src="js/auth.js?v=7"></script>
     <script src="js/dashboard-final.js?v=7"></script>
+    <script>
+        const SECTION_META = {
+            history: { title: 'My History',    sub: 'Your recently submitted defect tickets' },
+            sla:     { title: 'SLA Reference', sub: 'Defect classification & turnaround guidelines' },
+            form:    { title: 'Submit Request', sub: 'Fill in the form to raise a new support ticket' }
+        };
+
+        function goSection(id) {
+            document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('nav-' + id).classList.add('active');
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + id).classList.add('active');
+            document.getElementById('topbarTitle').textContent = SECTION_META[id].title;
+            document.getElementById('topbarSub').textContent   = SECTION_META[id].sub;
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('appMain').classList.toggle('sb-hidden');
+        }
+    </script>
 </body>
 
 </html>
