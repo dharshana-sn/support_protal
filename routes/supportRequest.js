@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
 const nodemailer = require('nodemailer');
+const { Op, Sequelize } = require('sequelize');
 
 // Create Support Request
 router.post('/', auth, async (req, res) => {
@@ -191,14 +192,36 @@ Notes: ${request.additionalNotes || '—'}`;
   }
 });
 
+// Get list of Project Names (for filters)
+router.get('/projects', auth, async (req, res) => {
+  try {
+    const where = req.user.role === 'support' ? {} : { userId: req.user.id };
+    const projects = await SupportRequest.findAll({
+      where,
+      attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('projectName')), 'projectName']],
+      raw: true
+    });
+    res.json(projects.map(p => p.projectName).filter(Boolean));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Get Support Requests (paginated)
 router.get('/', auth, async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.max(1, Math.min(50, parseInt(req.query.limit) || 5));
+    const { page: qPage, limit: qLimit, search, project } = req.query;
+    console.log(`[Support API] GET /?page=${qPage}&limit=${qLimit}&search=${search}&project=${project}`);
+    const page = Math.max(1, parseInt(qPage) || 1);
+    const limit = Math.max(1, Math.min(50, parseInt(qLimit) || 5));
     const offset = (page - 1) * limit;
 
-    const whereClause = req.user.role === 'support' ? {} : { userId: req.user.id };
+    let whereClause = req.user.role === 'support' ? {} : { userId: req.user.id };
+    
+    // Project Filter
+    if (project && project.trim() !== '') {
+      whereClause.projectName = project.trim();
+    }
 
     const { count, rows } = await SupportRequest.findAndCountAll({
       where: whereClause,
@@ -224,7 +247,11 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const request = await SupportRequest.findByPk(req.params.id, {
       include: [
-        { model: Comment, order: [['createdAt', 'ASC']] },
+        { 
+          model: Comment, 
+          include: [{ model: User, attributes: ['username'] }],
+          order: [['createdAt', 'ASC']] 
+        },
         { model: User, attributes: ['username'] }
       ]
     });
@@ -289,23 +316,126 @@ router.post('/:id/comment', auth, async (req, res) => {
   }
 });
 
-// Update Status (Support Only)
+// Update Status
+// - Support team: New / Open / In Progress / Resolved  → notifies ticket owner
+// - Ticket owner:  Reopened / Closed                  → notifies support + sends email
 router.patch('/:id/status', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'support') {
-      return res.status(403).json({ message: 'Only support team can change status' });
-    }
-
-    const request = await SupportRequest.findByPk(req.params.id);
+    const request = await SupportRequest.findByPk(req.params.id, {
+      include: [{ model: User, attributes: ['username', 'id'] }]
+    });
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
     const { status } = req.body;
     if (!status) return res.status(400).json({ message: 'Status is required' });
 
-    request.status = status;
-    await request.save();
+    const isSupport = req.user.role === 'support';
+    const isOwner  = Number(request.userId) === Number(req.user.id);
 
-    res.json({ message: 'Status updated successfully', request });
+    const supportStatuses = ['New', 'Open', 'In Progress', 'Resolved', 'Reopened', 'Closed'];
+    const userStatuses    = ['Reopened', 'Closed'];
+
+    const isSupportStatus = supportStatuses.includes(status);
+    const isUserStatus    = userStatuses.includes(status);
+
+    if ((isSupport && isSupportStatus) || ((isOwner || isSupport) && isUserStatus)) {
+      // Valid status transition
+      request.status = status;
+      await request.save();
+
+      const actionBy = req.user.username;
+      const actionLabel = isUserStatus ? (status === 'Reopened' ? 'Reopened' : 'Closed') : status;
+
+      // 1. In-app notifications
+      try {
+        if (isSupportStatus && request.userId !== req.user.id) {
+          // Support changed status -> notify owner
+          await Notification.create({
+            userId: request.userId,
+            message: `Ticket #${request.id} status changed to "${status}" by support`,
+            SupportRequestId: request.id,
+          });
+        } else if (isUserStatus) {
+          // User changed status -> notify all support users
+          const supportUsers = await User.findAll({ where: { role: 'support' } });
+          const notifications = supportUsers
+            .filter(u => u.id !== req.user.id)
+            .map(u => ({
+              userId: u.id,
+              message: `Ticket #${request.id} was ${actionLabel} by ${actionBy}`,
+              SupportRequestId: request.id,
+            }));
+          if (notifications.length > 0) await Notification.bulkCreate(notifications);
+        }
+      } catch (notifErr) { console.error('Notification error:', notifErr); }
+
+      // 2. Email alert to Support Team (MAIL_TO) for ANY update
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        try {
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT) || 465,
+            secure: true,
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+          });
+
+          const actionTime = new Date().toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short',
+            year: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+
+          // Visual context for email based on status
+          let statusColor = '#054279'; let statusBg = '#f0f7ff'; let emoji = '🔔';
+          if (status === 'Resolved') { statusColor = '#059669'; statusBg = '#ecfdf5'; emoji = '✅'; }
+          if (status === 'Closed')   { statusColor = '#dc2626'; statusBg = '#fef2f2'; emoji = '🔒'; }
+          if (status === 'Reopened') { statusColor = '#d97706'; statusBg = '#fffbeb'; emoji = '🔄'; }
+
+          const htmlBody = `
+<!DOCTYPE html>
+<html><body style="font-family:sans-serif;background:#f3f4f6;padding:20px;">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+    <div style="background:linear-gradient(135deg,#054279,#0891b2);padding:25px;text-align:center;color:#fff;">
+      <h2 style="margin:0;">${emoji} Ticket Status Update</h2>
+    </div>
+    <div style="background:${statusBg};padding:15px 25px;border-bottom:2px solid ${statusColor};">
+      <p style="margin:0;font-size:0.8rem;color:#64748b;text-transform:uppercase;">New Status</p>
+      <p style="margin:5px 0 0;font-size:1.2rem;font-weight:bold;color:${statusColor};">${status}</p>
+    </div>
+    <div style="padding:25px;">
+      <table width="100%" cellpadding="6" style="border-collapse:collapse;font-size:0.9rem;">
+        <tr><td style="font-weight:bold;color:#4b5563;border-bottom:1px solid #f1f5f9;">Ticket ID</td><td style="border-bottom:1px solid #f1f5f9;">#${request.id}</td></tr>
+        <tr><td style="font-weight:bold;color:#4b5563;border-bottom:1px solid #f1f5f9;">Summary</td><td style="border-bottom:1px solid #f1f5f9;">${request.summary || '—'}</td></tr>
+        <tr><td style="font-weight:bold;color:#4b5563;border-bottom:1px solid #f1f5f9;">Action By</td><td style="border-bottom:1px solid #f1f5f9;">${actionBy}</td></tr>
+        <tr><td style="font-weight:bold;color:#4b5563;">Time</td><td>${actionTime} IST</td></tr>
+      </table>
+    </div>
+    <div style="background:#f9fafb;padding:15px 25px;font-size:0.8rem;color:#6b7280;border-top:1px solid #e5e7eb;">
+      This is an automated alert from <strong>TerrA Support Portal</strong>.
+    </div>
+  </div>
+</body></html>`;
+
+          // Determing who needs to receive the email
+          let targetEmail = process.env.MAIL_TO || process.env.SMTP_USER; // Default to support
+          if (!isUserStatus && request.User && request.User.username && request.User.username.includes('@')) {
+            // Support updated the ticket -> Notify the Owner!
+            targetEmail = request.User.username;
+          }
+
+          await transporter.sendMail({
+            from: `"TerrA Support Portal" <${process.env.SMTP_USER}>`,
+            to: targetEmail,
+            subject: `[TerrA] Ticket #${request.id} ${actionLabel} by ${actionBy}`,
+            html: htmlBody
+          });
+        } catch (mailErr) { console.error('[SMTP ERROR]:', mailErr); }
+      }
+
+      return res.json({ message: 'Status updated successfully', request });
+    }
+
+    return res.status(403).json({ message: 'You are not allowed to set this status' });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
